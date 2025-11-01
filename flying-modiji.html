@@ -2,6 +2,15 @@
 <html lang="en">
 
 <head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1QSWB91R8H"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-1QSWB91R8H');
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -139,8 +148,9 @@
     <div id="gameOverScreen">
         <h1>Game Over!</h1>
         <div id="finalScore">Score: 0</div>
-        <button class="btn" onclick="restartGame()">PLAY AGAIN</button>
+        
         <a href="index.html" ><button class="btn" style="text-decoration: none; color: #333;">Home</button></a>
+        <button class="btn" onclick="restartGame()">PLAY AGAIN</button>
     </div>
 
     <script>
