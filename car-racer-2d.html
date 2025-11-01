@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Ensures proper rendering and touch zooming on mobile devices --><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Car Racer 2D</title>
+    <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the game */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Prevents bouncing and scrolling on the whole page */
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Set canvas to be block and prevent default touch behaviors like scrolling or zooming */
+        canvas {
+            display: block;
+            touch-action: none;
+            background: #4a5568; /* Tailwind gray-700 */
+        }
+
+        /* Game container to hold canvas and UI */
+        #gameContainer {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Horizontally center content */
+            align-items: center; /* Vertically center content */
+            position: relative;
+            background-color: #1a202c; /* Tailwind gray-900 */
+        }
+
+        /* Ensure UI elements are on top of touch controls */
+        #uiContainer {
+            z-index: 20;
+        }
+
+        /* Touch controls overlay */
+        #touchControls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            z-index: 10; /* Below UI, above canvas */
+        }
+
+        #leftControl, #rightControl {
+            width: 50%;
+            height: 100%;
+            display: flex; /* Use flexbox for centering */
+            justify-content: center; /* Center horizontally */
+            align-items: flex-end; /* Align to the bottom */
+            padding-bottom: calc(25vh - 30px); /* Center icon 25% from bottom (60px icon / 2) */
+            box-sizing: border-box; /* Include padding in height calculation */
+            cursor: pointer; /* Added for visual feedback on non-touch devices */
+            /* background-color: rgba(255, 0, 0, 0.1); /* Uncomment to visualize touch areas */
+        }
+
+        .control-arrow {
+            opacity: 0.3; /* Make arrows a bit more visible */
+            color: white;
+            width: 60px; /* Size of the circle */
+            height: 60px; /* Size of the circle */
+            background-color: rgba(0, 0, 0, 0.2); /* Subtle dark circle background */
+            border-radius: 50%; /* Make it a circle */
+            padding: 12px; /* Controls the size of the arrow inside the circle */
+            box-sizing: border-box; /* Padding is included in the 60x60 size */
+        }
+        
+        /* Modal styling */
+        .modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 30;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white overflow-hidden">
+
+    <div id="gameContainer">
+        
+        <!-- UI Elements --><div id="uiContainer" class="absolute top-0 left-0 w-full p-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Car Racer 2D</h1>
+            <div class="text-2xl font-bold">
+                Score: <span id="scoreDisplay">0</span>
+            </div>
+        </div>
+
+        <!-- Game Canvas --><canvas id="gameCanvas"></canvas>
+
+        <!-- Touch Controls Overlay --><div id="touchControls">
+            <div id="leftControl">
+                <!-- Left Arrow SVG --><svg class="control-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </div>
+            <div id="rightControl">
+                <!-- Right Arrow SVG --><svg class="control-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Start/Game Over Modal --><div id="modal" class="modal bg-gray-800 p-8 rounded-lg shadow-xl text-center hidden">
+            <!-- Font size reduced to text-2xl from text-3xl for single line fit --><h2 id="modalTitle" class="text-2xl font-bold mb-4">Car Racer 2D</h2>
+            <!-- Font size reduced from text-xl to text-lg --><p id="modalScore" class="text-lg mb-6">Final Score: 0</p>
+            
+            <!-- Updated: Home Button text changed to "Home" only --><button id="homeButton" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg text-xl transition duration-200 mb-4">
+                Home
+            </button>
+
+            <button id="startButton" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg text-xl transition duration-200">
+                Start Game
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const gameContainer = document.getElementById('gameContainer');
+
+            // UI Elements
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalScore = document.getElementById('modalScore');
+            const startButton = document.getElementById('startButton');
+            const homeButton = document.getElementById('homeButton'); // Home Button element
+
+            // Control Elements
+            const leftControl = document.getElementById('leftControl');
+            const rightControl = document.getElementById('rightControl');
+
+            let gameWidth, gameHeight;
+            let player, obstacles, roadLines;
+            let score, gameSpeed, isGameRunning, animationFrameId;
+
+            // Player state
+            let currentPlayerLane = 1; // 0 = left, 1 = middle, 2 = right
+            let targetX = 0;
+
+            // Game settings
+            const playerWidthRatio = 0.12; // Player width as a fraction of game width
+            const playerHeightRatio = 0.08; // Player height as a fraction of game height
+            const obstacleSpeedStart = 3; // Difficulty increased: Starting speed is faster
+            const roadLineWidth = 5;
+            const roadLineHeight = 30;
+            const roadLineGap = 20;
+
+            // Player object
+            const playerCar = {
+                width: 50,
+                height: 80,
+                x: 0,
+                y: 0,
+                speed: 5,
+                color: '#ef4444' // Tailwind red-500 (लाल)
+            };
+
+            // --- Game Functions ---
+
+            function init() {
+                resizeCanvas();
+                showModal('Car Racer 2D', 'Tap to dodge traffic!'); // टैप करके ट्रैफिक से बचो!
+                startButton.onclick = startGame;
+                
+                // Home button functionality
+                homeButton.onclick = () => {
+                    window.location.href = "index.html"; // Redirect to index.html
+                };
+
+                // Add touch event listeners for mobile controls
+                leftControl.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    if (isGameRunning && currentPlayerLane > 0) {
+                        currentPlayerLane--;
+                    }
+                }, { passive: false });
+                
+                rightControl.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    if (isGameRunning && currentPlayerLane < 2) {
+                        currentPlayerLane++;
+                    }
+                }, { passive: false });
+                
+                // Add mouse event listeners for PC controls (New Fix)
+                leftControl.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    if (isGameRunning && currentPlayerLane > 0) {
+                        currentPlayerLane--;
+                    }
+                });
+                
+                rightControl.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    if (isGameRunning && currentPlayerLane < 2) {
+                        currentPlayerLane++;
+                    }
+                });
+
+                // Resize canvas on window resize
+                window.addEventListener('resize', resizeCanvas);
+            }
+
+            function startGame() {
+                score = 0;
+                gameSpeed = obstacleSpeedStart;
+                isGameRunning = true;
+                obstacles = [];
+                roadLines = [];
+                scoreDisplay.textContent = '0';
+                modal.classList.add('hidden');
+
+                // Initial player setup
+                playerCar.width = gameWidth * playerWidthRatio;
+                playerCar.height = gameHeight * playerHeightRatio;
+                
+                currentPlayerLane = 1; // Start in middle lane (बीच की लेन)
+                const laneWidth = gameWidth / 3;
+                playerCar.x = (currentPlayerLane * laneWidth) + (laneWidth / 2) - (playerCar.width / 2);
+                targetX = playerCar.x;
+                
+                // Set player Y position 25% from bottom (नीचे से 25% ऊपर)
+                playerCar.y = (gameHeight * 0.75) - (playerCar.height / 2);
+                playerCar.speed = gameWidth * 0.03; // Responsive lane change speed
+
+                // Initial road lines (शुरुआती सड़क लाइनें)
+                // Overfill by 2 lines to ensure coverage (कवरेज सुनिश्चित करने के लिए 2 लाइनों से अधिक भरें)
+                for (let i = 0; i < (gameHeight / (roadLineHeight + roadLineGap)) + 2; i++) {
+                    roadLines.push({
+                        y: i * (roadLineHeight + roadLineGap)
+                    });
+                }
+                
+                // Start obstacle spawn loop (बाधा स्पॉन लूप शुरू करें)
+                spawnObstacle();
+
+                // Start game loop (गेम लूप शुरू करें)
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+                gameLoop();
+            }
+
+            function gameOver() {
+                isGameRunning = false;
+                cancelAnimationFrame(animationFrameId);
+                showModal('Game Over', `Final Score: ${score}`); // गेम खत्म, अंतिम स्कोर:
+            }
+
+            function showModal(title, scoreText) {
+                // Update the modal title when showing the modal
+                modalTitle.textContent = title;
+                modalScore.textContent = scoreText;
+                
+                // Home button is always visible in modal HTML, no need to toggle class
+
+                if (title === 'Game Over') {
+                    startButton.textContent = 'Restart Game'; // गेम पुनः शुरू करें
+                } else {
+                    startButton.textContent = 'Start Game'; // गेम शुरू करें
+                }
+                modal.classList.remove('hidden');
+            }
+
+            function resizeCanvas() {
+                // Fit canvas to container, maintaining a 9:16 portrait aspect ratio
+                const containerWidth = gameContainer.clientWidth;
+                const containerHeight = gameContainer.clientHeight;
+                
+                if (containerWidth / containerHeight > 9 / 16) {
+                    // Container is wider than 9:16 (e.g., desktop, landscape)
+                    gameHeight = containerHeight;
+                    gameWidth = (containerHeight * 9) / 16;
+                } else {
+                    // Container is taller than 9:16 (e.g., portrait mobile)
+                    gameWidth = containerWidth;
+                    gameHeight = (containerWidth * 16) / 9;
+                }
+
+                // Ensure game height isn't larger than container
+                if (gameHeight > containerHeight) {
+                    gameHeight = containerHeight;
+                    gameWidth = (containerHeight * 9) / 16;
+                }
+
+                canvas.width = gameWidth;
+                canvas.height = gameHeight;
+                
+                // Recalculate player position if game is running
+                if (isGameRunning) {
+                    // Set player Y position 25% from bottom
+                    playerCar.y = (gameHeight * 0.75) - (playerCar.height / 2);
+                    playerCar.speed = gameWidth * 0.03; // Responsive lane change speed
+                    
+                    // Snap player to current lane's new position
+                    const laneWidth = gameWidth / 3;
+                    targetX = (currentPlayerLane * laneWidth) + (laneWidth / 2) - (playerCar.width / 2);
+                    playerCar.x = targetX;
+                }
+            }
+
+            function gameLoop() {
+                if (!isGameRunning) return;
+
+                // 1. Clear canvas
+                ctx.clearRect(0, 0, gameWidth, gameHeight);
+
+                // 2. Draw Road & Lines
+                drawRoad();
+
+                // 3. Update & Draw Player
+                updatePlayer();
+                drawCarShape(playerCar); // अब कार शेप ड्रा करें
+
+                // 4. Update & Draw Obstacles
+                updateObstacles();
+                
+                // 5. Update Score
+                scoreDisplay.textContent = score;
+                
+                // 6. Request next frame
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+
+            function drawRoad() {
+                // Main road (मुख्य सड़क)
+                ctx.fillStyle = '#4a5568'; // gray-700
+                ctx.fillRect(0, 0, gameWidth, gameHeight);
+
+                // Lane markings (लेन मार्किंग)
+                ctx.fillStyle = '#cbd5e0'; // gray-400
+                const laneWidth = gameWidth / 3;
+                
+                let minY = gameHeight * 2; // Start with a high value
+                
+                roadLines.forEach(line => {
+                    // Left line (बायां लाइन)
+                    ctx.fillRect(laneWidth - (roadLineWidth / 2), line.y, roadLineWidth, roadLineHeight);
+                    // Right line (दायां लाइन)
+                    ctx.fillRect((laneWidth * 2) - (roadLineWidth / 2), line.y, roadLineWidth, roadLineHeight);
+                    
+                    // Animate lines (लाइनों को एनिमेट करें)
+                    line.y += gameSpeed;
+
+                    if (line.y < minY) {
+                        minY = line.y;
+                    }
+                });
+                
+                // Recycle lines (लाइनों को रीसायकल करें)
+                roadLines.forEach(line => {
+                    if (line.y > gameHeight) {
+                        // This line is off-screen (bottom)
+                        // Move it to the top, relative to the highest current line
+                        line.y = minY - (roadLineHeight + roadLineGap);
+                        // Update minY, as this is now the new highest line
+                        minY = line.y;
+                    }
+                });
+            }
+
+            function updatePlayer() {
+                // Calculate target X position based on the current lane
+                const laneWidth = gameWidth / 3;
+                targetX = (currentPlayerLane * laneWidth) + (laneWidth / 2) - (playerCar.width / 2);
+
+                // Smoothly move player towards the target X
+                const dx = targetX - playerCar.x;
+
+                if (Math.abs(dx) < playerCar.speed) {
+                    playerCar.x = targetX;
+                } else if (dx > 0) {
+                    // Move right
+                    playerCar.x += playerCar.speed;
+                } else if (dx < 0) {
+                    // Move left
+                    playerCar.x -= playerCar.speed;
+                }
+                
+                // Boundary checks are no longer needed, as lanes are always within bounds
+            }
+
+            function updateObstacles() {
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const obs = obstacles[i];
+                    obs.y += gameSpeed;
+
+                    drawCarShape(obs); // बाधाओं को भी कार शेप में ड्रा करें
+
+                    // Check for collision (टक्कर की जाँच करें)
+                    if (checkCollision(playerCar, obs)) {
+                        gameOver();
+                        return;
+                    }
+
+                    // Remove if off-screen (स्क्रीन से बाहर होने पर हटा दें)
+                    if (obs.y > gameHeight) {
+                        obstacles.splice(i, 1);
+                        score++;
+                        // Difficulty increased: Speed gains faster
+                        gameSpeed += 0.15; // Increased from 0.1
+                    }
+                }
+            }
+            
+            function spawnObstacle() {
+                if (!isGameRunning) return;
+
+                const obstacleWidth = playerCar.width * (0.9 + Math.random() * 0.2); // 90-110% of player width
+                const obstacleHeight = playerCar.height * (0.9 + Math.random() * 0.2); // 90-110% of player height
+                
+                // Spawn in one of 3 lanes (3 लेन में से किसी एक में स्पॉन करें)
+                const laneWidth = gameWidth / 3;
+                const lane = Math.floor(Math.random() * 3); // 0, 1, or 2
+                const x = (lane * laneWidth) + (laneWidth / 2) - (obstacleWidth / 2);
+
+                const y = -obstacleHeight; // Start just above the screen (स्क्रीन के ठीक ऊपर से शुरू करें)
+                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#6366f1']; // blue, green, amber, indigo
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                obstacles.push({
+                    width: obstacleWidth,
+                    height: obstacleHeight,
+                    x: x,
+                    y: y,
+                    color: color
+                });
+
+                // Set timeout for next spawn
+                // Difficulty increased: Spawns faster
+                const spawnInterval = Math.max(400, 1800 - (gameSpeed * 120)); // Adjusted base time and multiplier
+                setTimeout(spawnObstacle, spawnInterval);
+            }
+
+            /**
+             * Draws a stylized 2D car shape on the canvas with details and shadows.
+             * @param {object} rect The car object (playerCar or obstacle).
+             */
+            function drawCarShape(rect) {
+                const w = rect.width;
+                const h = rect.height;
+                const x = rect.x;
+                const y = rect.y;
+
+                // --- 0. Ground Shadow --- (जमीन की परछाई)
+                // Draw a subtle oval shadow slightly below the car
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; // Darker shadow
+                const shadowW = w * 0.9;
+                const shadowH = h * 0.08;
+                
+                ctx.beginPath();
+                ctx.ellipse(
+                    x + w / 2, // Center X
+                    y + h + shadowH, // Center Y (below the car body)
+                    shadowW / 2, // Radius X
+                    shadowH / 2, // Radius Y
+                    0, 0, Math.PI * 2
+                );
+                ctx.fill();
+
+                // --- 1. Main Body with 3D-ish Gradient --- (3D जैसा ग्रेडिएंट के साथ मुख्य बॉडी)
+                // Create a vertical gradient (for 3D effect)
+                const gradient = ctx.createLinearGradient(x, y, x, y + h);
+                const color = rect.color;
+                
+                // Helper to create colors for gradient
+                const hexToRgb = (hex) => {
+                    const r = parseInt(hex.substring(1, 3), 16);
+                    const g = parseInt(hex.substring(3, 5), 16);
+                    const b = parseInt(hex.substring(5, 7), 16);
+                    return { r, g, b };
+                };
+
+                const adjustColor = (rgb, factor) => {
+                    const r = Math.min(255, Math.floor(rgb.r * factor));
+                    const g = Math.min(255, Math.floor(rgb.g * factor));
+                    const b = Math.min(255, Math.floor(rgb.b * factor));
+                    return `rgb(${r}, ${g}, ${b})`;
+                };
+                
+                const baseRgb = hexToRgb(color);
+                const shadeFactor = 0.8;
+                const highlightFactor = 1.2;
+                
+                const darkerColor = adjustColor(baseRgb, shadeFactor);
+                const lighterColor = adjustColor(baseRgb, highlightFactor);
+
+
+                gradient.addColorStop(0, lighterColor);   // Top is lighter
+                gradient.addColorStop(0.5, color);        // Middle is base color
+                gradient.addColorStop(1, darkerColor);    // Bottom is darker
+                
+                ctx.fillStyle = gradient;
+                
+                const radius = w * 0.1; 
+                
+                ctx.beginPath();
+                // Draw rounded rectangle path
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + w - radius, y);
+                ctx.arcTo(x + w, y, x + w, y + radius, radius);
+                ctx.lineTo(x + w, y + h - radius);
+                ctx.arcTo(x + w, y + h, x + w - radius, y + h, radius);
+                ctx.lineTo(x + radius, y + h);
+                ctx.arcTo(x, y + h, x, y + h - radius, radius);
+                ctx.lineTo(x, y + radius);
+                ctx.arcTo(x, y, x + radius, y, radius);
+                ctx.closePath();
+                ctx.fill();
+
+                // --- 1.7. Rear Bumper/Spoiler (New Detail) --- (बम्पर/स्पॉइलर)
+                const bumperH = h * 0.05;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Darker shade of body
+                if (rect === playerCar) {
+                    // Draw on the bottom (rear)
+                    ctx.fillRect(x + w * 0.05, y + h - bumperH, w * 0.9, bumperH);
+                } else {
+                    // Draw on the top (front of traffic car)
+                    ctx.fillRect(x + w * 0.05, y, w * 0.9, bumperH);
+                }
+
+
+                // --- 2. Cabin/Windshield (Trapezoid shape for better perspective) --- (विंडशील्ड)
+                const cabinH = h * 0.35;
+                const topWidth = w * 0.6; // Narrower at the top
+                const bottomWidth = w * 0.8; // Wider at the bottom
+                const cabinY = y + h * 0.2;
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // Darker glass for depth
+                ctx.beginPath();
+                // Top edge
+                ctx.moveTo(x + (w - topWidth) / 2, cabinY); 
+                ctx.lineTo(x + (w - topWidth) / 2 + topWidth, cabinY); 
+                // Right edge
+                ctx.lineTo(x + (w - bottomWidth) / 2 + bottomWidth, cabinY + cabinH); 
+                // Bottom edge
+                ctx.lineTo(x + (w - bottomWidth) / 2, cabinY + cabinH); 
+                ctx.closePath();
+                ctx.fill();
+                
+                // --- 2.5. Windshield Highlight (New Detail) --- (विंडशील्ड हाईलाइट)
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                // Draw a thin line near the top of the windshield
+                ctx.moveTo(x + (w - topWidth) / 2 + 2, cabinY + 2); 
+                ctx.lineTo(x + (w - topWidth) / 2 + topWidth - 2, cabinY + 2); 
+                ctx.stroke();
+
+
+                // --- 3. Wheels (Circular Detail) --- (पहिये)
+                const wheelRadius = w * 0.12;
+                const hubcapRadius = w * 0.05;
+                const offset = w * 0.05;
+                const frontY = y + h * 0.8;
+                const backY = y + h * 0.2;
+
+                function drawWheel(centerX, centerY) {
+                    // Tire (Black)
+                    ctx.fillStyle = '#1f2937'; // Tailwind gray-800 (टायर का रंग)
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, wheelRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Tyre Wall Detail (New Detail)
+                    ctx.strokeStyle = '#4b5563'; // Tailwind gray-600 (टायर की दीवार का किनारा)
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, wheelRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Hubcap/Rim (Lighter Gray)
+                    ctx.fillStyle = '#9ca3af'; // Tailwind gray-400 (हबकैप)
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, hubcapRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Draw 4 circular wheels, slightly offset to the sides
+                drawWheel(x + offset, backY); // Back Left
+                drawWheel(x + w - offset, backY); // Back Right
+                drawWheel(x + offset, frontY); // Front Left
+                drawWheel(x + w - offset, frontY); // Front Right
+                
+                // --- 4. Headlights/Taillights (existing logic) --- (हेडलाइट्स/टेललाइट्स)
+                const lightSize = w * 0.1;
+                const lightPadding = w * 0.05;
+
+                // Headlights (top front) - only visible on traffic coming down
+                if (rect !== playerCar) {
+                    ctx.fillStyle = '#ffeb3b'; // Yellow/Amber
+                    ctx.fillRect(x + lightPadding, y + lightPadding, lightSize, lightSize);
+                    ctx.fillRect(x + w - lightSize - lightPadding, y + lightPadding, lightSize, lightSize);
+                }
+                
+                // Taillights (bottom rear) - only visible on the player car
+                if (rect === playerCar) {
+                    ctx.fillStyle = '#f44336'; // Red
+                    ctx.fillRect(x + lightPadding, y + h - lightSize - lightPadding, lightSize, lightSize);
+                    ctx.fillRect(x + w - lightSize - lightPadding, y + h - lightSize - lightPadding, lightSize, lightSize);
+                }
+            }
+
+            function checkCollision(rect1, rect2) {
+                return (
+                    rect1.x < rect2.x + rect2.width &&
+                    rect1.x + rect1.width > rect2.x &&
+                    rect1.y < rect2.y + rect2.height &&
+                    rect1.y + rect1.height > rect2.y
+                );
+            }
+
+            // --- Start the game initialization --- (गेम इनिशियलाइज़ेशन शुरू करें)
+            init();
+        });
+    </script>
+
+</body>
+</html>
