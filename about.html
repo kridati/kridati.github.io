@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1QSWB91R8H"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-1QSWB91R8H');
+    </script>
+    <meta charset="UTF-m-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>kridati - About (Page)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'gray-950': '#0A0A0A',
+                        'gray-900': '#111111',
+                        'gray-800': '#1E1E1E',
+                        'gray-700': '#2A2A2A',
+                        'gray-600': '#4A4A4A',
+                        'brand-blue': '#4F46E5',
+                        'brand-blue-hover': '#4338CA',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0A0A0A;
+            /* gray-950 */
+            color: #E5E5E5;
+            /* text-gray-200 */
+        }
+
+        .carousel-slide {
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .game-card {
+            /* Updated transition for more properties and a smoother ease-out */
+            transition: opacity 0.3s ease-out;
+            opacity: 0.9;
+            /* Slightly fade out by default for a nice hover-in effect */
+            margin: 1rem 0px 0px 1rem;
+        }
+
+        .game-card:hover {
+            opacity: 1;
+            /* Full opacity on hover */
+        }
+
+        /* New styles for the image wrapper */
+        .game-card-image-wrapper {
+            transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+            border-radius: 0.5rem;
+            /* Re-adding rounded-lg from tailwind */
+            overflow: hidden;
+            /* This clips the image, but we need it for rounded corners */
+        }
+
+        .game-card:hover .game-card-image-wrapper {
+            transform: translateY(-6px) scale(1.03);
+            box-shadow: 0 0 20px 4px rgba(79, 70, 229, 0.4), 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            /* Added to ensure it lifts above siblings */
+            z-index: 10;
+            /* Added to ensure it lifts above siblings */
+        }
+
+        .game-card-image-wrapper img {
+            /* Ensure image inside also transitions smoothly if needed, and respects rounding */
+            transition: transform 0.3s ease-out;
+            border-radius: 0.5rem;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .category-header .view-all-link {
+            color: #9CA3AF;
+            /* text-gray-400 */
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s ease;
+        }
+
+        .category-header .view-all-link:hover {
+            color: #FFF;
+        }
+
+        .view-all-link i {
+            margin-left: 0.25rem;
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Custom scrollbar for game rows (WebKit) */
+        .game-row-scrollbar {
+            overflow-x: auto;
+            scrollbar-width: thin;
+            /* Firefox */
+            scrollbar-color: #4A4A4A #1E1E1E;
+            /* Firefox */
+
+            /* Add styles for drag-to-scroll */
+            cursor: grab;
+            user-select: none;
+            /* Prevent text selection while dragging */
+            -webkit-overflow-scrolling: touch;
+            /* Momentum scrolling for iOS */
+        }
+
+        .game-row-scrollbar.grabbing {
+            cursor: grabbing;
+        }
+
+        .game-row-scrollbar::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .game-row-scrollbar::-webkit-scrollbar-track {
+            background: #1E1E1E;
+            /* gray-800 */
+            border-radius: 4px;
+        }
+
+        .game-row-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #4A4A4A;
+            /* gray-600 */
+            border-radius: 4px;
+            border: 2px solid #1E1E1E;
+            /* gray-800 */
+        }
+
+        .game-row-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #6B7280;
+            /* gray-500 */
+        }
+
+        /* Hide scrollbar by default, show on hover */
+        .hide-scrollbar {
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+            /* WebKit */
+        }
+    </style>
+</head>
+
+<body class="flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-30 bg-gray-950/80 backdrop-blur-sm border-b border-gray-800">
+        <nav class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="index.html" class="flex items-center gap-2 text-white">
+                        <i data-lucide="gamepad-2" class="h-8 w-8 text-brand-blue"></i>
+                        <span class="font-bold text-2xl">kridati</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation (Search & Categories) -->
+                <div class="hidden md:flex md:items-center md:gap-4 lg:gap-6">
+
+
+
+
+
+                </div>
+
+                <!-- Profile & Mobile Menu Button -->
+                <div class="flex items-center">
+                    <!-- Profile (Desktop) -->
+                    <button
+                        class="hidden md:block p-2 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-white">
+                        <a href="index.html" style="text-decoration: none;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2L3 9H6V20H18V9H21L12 2Z" fill="#808080" />
+                            </svg>
+                        </a>
+                    </button>
+
+                    <!-- Mobile Home Button -->
+                    <button id="mobile-search-btn" class="md:hidden p-2 rounded-full text-gray-400 hover:text-white">
+                        <a href="index.html" style="text-decoration: none;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2L3 9H6V20H18V9H21L12 2Z" fill="#808080" />
+                            </svg>
+                        </a>
+
+                    </button>
+
+
+
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="md:hidden hidden pb-4">
+                <a href="#"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">New</a>
+                <a href="#"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Popular</a>
+
+                <!-- Mobile Category Toggle -->
+                <a href="#" id="mobile-category-toggle"
+                    class="flex justify-between items-center w-full px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">
+                    <span>Categories</span>
+                    <i id="mobile-category-icon" data-lucide="chevron-down" class="h-5 w-5"></i>
+                </a>
+                <div id="mobile-category-list" class="hidden pl-6">
+                    <a href="#"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700">Action</a>
+                    <a href="#"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700">Adventure</a>
+                    <a href="#"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700">Puzzle</a>
+                    <a href="#"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700">Racing</a>
+                    <a href="#"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700">Strategy</a>
+                    <a href="#"
+                        class="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700">Sports</a>
+                </div>
+
+                <a href="#"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Profile</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main content container -->
+    <main class="flex-grow">
+        <!-- Game Sections -->
+        <div id="game-sections-container"
+            class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10 md:space-y-14 pb-12">
+
+            <!-- Section: Popular Games -->
+            <section aria-labelledby="popular-games-heading">
+                <div class="category-header">
+                    <h2 id="popular-games-heading" class="text-2xl md:text-3xl font-bold text-white">About</h2>
+                    <a href="#" class="view-all-link hidden sm:flex">
+
+                        <i data-lucide="arrow-right" class="h-4 w-4 ml-1"></i>
+                    </a>
+                </div>
+                <div class=" -mx-4 sm:mx-0 pl-4 sm:pl-0">
+                    <div class="flex space-x-4 md:space-x-6 pb-2">
+                        <p class="text-sm text-gray-400">
+                            <article>
+                                <br>
+                            <hr style="border: none; height: 4px; background-color: gray;">
+                            <br>
+                            <h1 class="text-sm text-gray-400">🎮 Welcome to Kridati: Play, Learn, and Achieve More!</h1> <br>
+
+                            <h2 class="text-sm text-gray-400">Our Mission</h2> <br>
+                            <p class="text-sm text-gray-400">At **Kridati** (a name inspired by the Sanskrit word for 'to play'), we believe in the
+                                power of digital spaces to be both entertaining and exceptionally useful. Our mission is
+                                simple: to create a freely accessible, all-in-one online destination where you can
+                                **relax, have fun, and get things done.**</p> <br>
+                            <p class="text-sm text-gray-400">We are building a community hub that serves two primary purposes: offering a fantastic
+                                selection of **free, high-quality online games** for endless entertainment, and
+                                providing a growing suite of **practical tools** to help you tackle everyday tasks.</p>
+
+                            <hr style="border: none; height: 4px; background-color: gray;"><br>
+
+                            <h2 class="text-sm text-gray-400">What We Offer Now</h2><br>
+                            <p class="text-sm text-gray-400"><strong>A World of Free Online Games:</strong> Dive into our ever-expanding library of
+                                games, from quick-play casual titles and challenging puzzles to immersive strategy
+                                games. Every game on Kridati is selected to ensure a fun, engaging, and frustration-free
+                                experience—no downloads, no payments, just pure play!</p><br>
+                            <p class="text-sm text-gray-400"><strong>A Seamless Experience:</strong> We focus on a clean, fast, and easy-to-navigate
+                                interface, ensuring you can spend less time searching and more time enjoying. Kridati is
+                                your go-to escape for a few minutes of fun or a marathon gaming session.</p> 
+
+                            <hr style="border: none; height: 4px; background-color: gray;"><br>
+
+                            <h2 class="text-sm text-gray-400">The Future of Kridati: Play Smarter</h2><br>
+                            <p class="text-sm text-gray-400">We are committed to evolving Kridati beyond just gaming. Our exciting plans for the
+                                future include the introduction of a brand-new, dedicated <strong>"Kridati
+                                    Tools"</strong> section.</p>
+                            <p class="text-sm text-gray-400">This section will be your one-stop shop for practical, free-to-use digital utilities. Our
+                                initial rollout will focus on:</p><br>
+                            <ul>
+                                <li class="text-sm text-gray-400"><strong>Essential Calculators:</strong> Simple and advanced calculators for math,
+                                    finance, and everyday use.</li><br>
+                                <li class="text-sm text-gray-400"><strong>Productivity Tools:</strong> Quick utilities to help with things like unit
+                                    conversions, text manipulation, and more.</li>
+                            </ul><br>
+                            <p class="text-sm text-gray-400">We envision a future where Kridati is not only the place you go to unwind with a game but
+                                also the reliable resource you use to quickly find and use a handy tool. This dual focus
+                                on <strong>play and utility</strong> is what will make Kridati truly unique.</p>
+
+                            <hr style="border: none; height: 4px; background-color: gray;"><br>
+
+                            <h2 class="text-sm text-gray-400">Join the Journey</h2><br>
+                            <p class="text-sm text-gray-400">Thank you for being a part of the Kridati community. We are constantly working to improve
+                                and expand our offerings, and we look forward to building this exciting future with you.
+                            </p>
+                            <p class="text-sm text-gray-400"><strong>Play a game, check back soon for our new tools, and let us know what you'd like
+                                    to see next!</strong></p>
+                        </article>
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800 mt-auto">
+        <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="text-gray-400 text-sm mb-4 md:mb-0">
+                    &copy; 2025 Kridati. All Rights Reserved.
+                </div>
+                <div class="flex items-center space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">About</a>
+                    <a href="contact.html" class="text-gray-400 hover:text-white transition-colors">Contact</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">Privacy Policy</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">Terms</a>
+                </div>
+                <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i data-lucide="twitter" class="h-5 w-5"></i>
+                        <span class="sr-only">Twitter</span>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i data-lucide="instagram" class="h-5 w-5"></i>
+                        <span class="sr-only">Instagram</span>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i data-lucide="facebook" class="h-5 w-5"></i>
+                        <span class="sr-only">Facebook</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+
+
+
+    <!-- Lucide Icons Script -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <!-- Main JS -->
+    <script>
+        // Wrap all JS in window.onload to ensure elements AND libraries are loaded
+        window.addEventListener('load', () => {
+
+            // --- Lucide Icons ---
+            // Initial icon render
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            } else {
+                console.error('Lucide library not loaded');
+            }
+
+
+            // --- Mobile Menu Toggle ---
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (menuBtn) {
+                menuBtn.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                    // Toggle icon
+                    const icon = menuBtn.querySelector('i');
+                    if (mobileMenu.classList.contains('hidden')) {
+                        icon.setAttribute('data-lucide', 'menu');
+                    } else {
+                        icon.setAttribute('data-lucide', 'x');
+                    }
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons(); // Re-render icons
+                    }
+                });
+            }
+
+            // --- Desktop Category Dropdown ---
+            const categoryBtn = document.getElementById('desktop-category-btn');
+            const categoryDropdown = document.getElementById('desktop-category-dropdown');
+            if (categoryBtn) {
+                categoryBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    categoryDropdown.classList.toggle('hidden');
+                });
+            }
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (categoryDropdown && !categoryDropdown.classList.contains('hidden') && (!categoryBtn || !categoryBtn.contains(e.target))) {
+                    categoryDropdown.classList.add('hidden');
+                }
+            });
+
+            // --- Carousel Logic ---
+            const slides = document.querySelectorAll('#carousel-container .carousel-slide');
+            const dotsContainer = document.getElementById('carousel-dots');
+
+            if (slides.length > 0) {
+                let currentSlide = 0;
+                let slideInterval;
+                let dots = [];
+
+                // Touch slide variables
+                const carouselContainer = document.getElementById('carousel-container');
+                let touchStartX = 0;
+                let touchEndX = 0;
+
+                // Create dots
+                slides.forEach((_, i) => {
+                    const dot = document.createElement('button');
+                    dot.classList.add('carousel-dot', 'w-2.5', 'h-2.5', 'bg-gray-600', 'rounded-full', 'transition-all', 'duration-300', 'ease-in-out');
+                    dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+                    dot.addEventListener('click', () => {
+                        showSlide(i);
+                        resetInterval();
+                    });
+                    dotsContainer.appendChild(dot);
+                    dots.push(dot);
+                });
+
+                function showSlide(index) {
+                    // Wrap around logic
+                    if (index >= slides.length) {
+                        index = 0;
+                    } else if (index < 0) {
+                        index = slides.length - 1;
+                    }
+
+                    // Hide all slides
+                    slides.forEach(slide => {
+                        slide.classList.add('hidden', 'opacity-0');
+                    });
+
+                    // Show the target slide
+                    if (slides[index]) {
+                        slides[index].classList.remove('hidden');
+                        // Force a reflow before adding opacity-100 to trigger transition
+                        void slides[index].offsetWidth;
+                        slides[index].classList.remove('opacity-0');
+                    }
+
+                    // Update dots
+                    dots.forEach(dot => {
+                        dot.classList.remove('bg-white', 'scale-125');
+                        dot.classList.add('bg-gray-600');
+                    });
+                    if (dots[index]) {
+                        dots[index].classList.remove('bg-gray-600');
+                        dots[index].classList.add('bg-white', 'scale-125');
+                    }
+
+                    currentSlide = index;
+                }
+
+                function nextSlide() {
+                    showSlide(currentSlide + 1);
+                }
+
+                function prevSlide() {
+                    showSlide(currentSlide - 1);
+                }
+
+                function resetInterval() {
+                    clearInterval(slideInterval);
+                    // Start a new interval
+                    slideInterval = setInterval(nextSlide, 5000);
+                }
+
+                // Touch event handlers
+                if (carouselContainer) {
+                    // { passive: true } improves scroll performance
+                    carouselContainer.addEventListener('touchstart', (e) => {
+                        // Store the starting X position of the touch
+                        touchStartX = e.changedTouches[0].screenX;
+                        // We don't want the slide to change while touching
+                        clearInterval(slideInterval);
+                    }, { passive: true });
+
+                    carouselContainer.addEventListener('touchend', (e) => {
+                        // Store the ending X position
+                        touchEndX = e.changedTouches[0].screenX;
+                        handleSwipe();
+                        // Restart the interval after the swipe is handled
+                        resetInterval();
+                    }, { passive: true });
+                }
+
+                function handleSwipe() {
+                    const swipeThreshold = 50; // Minimum pixels swiped to trigger next/prev
+
+                    if (touchStartX === 0) return; // Fix for touchend firing without touchstart
+
+                    if (touchStartX - touchEndX > swipeThreshold) {
+                        // Swiped left (next slide)
+                        nextSlide();
+                    } else if (touchEndX - touchStartX > swipeThreshold) {
+                        // Swiped right (previous slide)
+                        prevSlide();
+                    }
+
+                    // Reset positions for next swipe
+                    touchStartX = 0;
+                    touchEndX = 0;
+                }
+
+                // Initial setup
+                showSlide(0);
+                resetInterval(); // Start the interval initially
+            }
+
+            // --- Mobile Category Toggle ---
+            const mobileCategoryBtn = document.getElementById('mobile-category-toggle');
+            const mobileCategoryList = document.getElementById('mobile-category-list');
+            const mobileCategoryIcon = document.getElementById('mobile-category-icon');
+
+            if (mobileCategoryBtn) {
+                mobileCategoryBtn.addEventListener('click', (e) => {
+                    e.preventDefault(); // Prevent link navigation
+                    mobileCategoryList.classList.toggle('hidden');
+
+                    // Toggle icon
+                    if (mobileCategoryList.classList.contains('hidden')) {
+                        mobileCategoryIcon.setAttribute('data-lucide', 'chevron-down');
+                    } else {
+                        mobileCategoryIcon.setAttribute('data-lucide', 'chevron-up');
+                    }
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons(); // Re-render icons
+                    }
+                });
+            }
+
+
+            // --- Game Row Drag-to-Scroll Logic ---
+            const sliders = document.querySelectorAll('.game-row-scrollbar');
+
+            sliders.forEach(slider => {
+                let isDown = false;
+                let isMouseDown = false; // Separate tracking for mouse
+                let startX, startY;
+                let scrollLeft;
+                let scrollDirection = null; // null, 'horizontal', 'vertical'
+
+                const stopDrag = () => {
+                    isDown = false;
+                    isMouseDown = false;
+                    slider.classList.remove('grabbing');
+                    scrollDirection = null;
+                };
+
+                const startDrag = (e) => {
+                    isDown = true;
+                    slider.classList.add('grabbing');
+
+                    const pageX = e.pageX || e.changedTouches[0].pageX;
+                    const pageY = e.pageY || e.changedTouches[0].pageY;
+
+                    startX = pageX;
+                    startY = pageY;
+                    scrollLeft = slider.scrollLeft;
+                    scrollDirection = null; // Reset on new touch
+                };
+
+                const moveDrag = (e) => {
+                    if (!isDown) return;
+
+                    const isTouch = !!e.changedTouches;
+                    // For mousemove, e.changedTouches will be undefined, so isTouch is false.
+                    // For touchmove, it will be defined, so isTouch is true.
+
+                    const currentX = e.pageX || e.changedTouches[0].pageX;
+                    const currentY = e.pageY || e.changedTouches[0].pageY;
+
+                    if (scrollDirection === null) {
+                        // Only decide direction on the first significant move
+                        const deltaX = Math.abs(currentX - startX);
+                        const deltaY = Math.abs(currentY - startY);
+
+                        const threshold = 5; // Min pixels to move before locking direction
+
+                        if (!isTouch) {
+                            // Mouse is always horizontal
+                            scrollDirection = 'horizontal';
+                        } else if (deltaX > deltaY + threshold) {
+                            scrollDirection = 'horizontal';
+                        } else if (deltaY > deltaX + threshold) {
+                            scrollDirection = 'vertical';
+                        }
+                        // If not enough movement, scrollDirection remains null
+                    }
+
+                    if (scrollDirection === 'horizontal') {
+                        // Only prevent default if we are scrolling horizontally
+                        e.preventDefault();
+                        const walk = (currentX - startX) * 1.5; // Multiplier for faster scroll
+                        slider.scrollLeft = scrollLeft - walk;
+                    }
+                    // If scrollDirection is 'vertical' or still null, we do nothing
+                    // This allows the browser's native vertical scroll to take over.
+                };
+
+                // Mouse Events (Original logic, simplified)
+                slider.addEventListener('mousedown', (e) => {
+                    isMouseDown = true;
+                    startDrag(e);
+                });
+                slider.addEventListener('mouseleave', () => {
+                    if (isMouseDown) stopDrag();
+                });
+                slider.addEventListener('mouseup', () => {
+                    if (isMouseDown) stopDrag();
+                });
+                slider.addEventListener('mousemove', (e) => {
+                    if (!isMouseDown) return;
+                    moveDrag(e); // This will be flagged as horizontal-only
+                });
+
+                // Touch Events (Smarter logic)
+                // We need passive: false to be able to call e.preventDefault()
+                slider.addEventListener('touchstart', startDrag, { passive: false });
+                slider.addEventListener('touchend', stopDrag, { passive: false });
+                slider.addEventListener('touchmove', moveDrag, { passive: false });
+            });
+
+
+            // --- Search Logic ---
+            // Search Input Elements
+            const desktopSearchInput = document.getElementById('desktop-search-input');
+            const mobileSearchInput = document.getElementById('mobile-search-input');
+
+            // Search Overlay Elements
+            const mobileSearchBtn = document.getElementById('mobile-search-btn');
+            const mobileSearchOverlay = document.getElementById('mobile-search-overlay');
+            const mobileSearchClose = document.getElementById('mobile-search-close');
+            const mobileSearchResultsGrid = document.getElementById('mobile-search-results-grid');
+            const mobileNoResultsMessage = document.getElementById('mobile-no-results-message');
+
+            // Search Results Elements
+            const gameSectionsContainer = document.getElementById('game-sections-container');
+            const searchResultsSection = document.getElementById('search-results-section');
+            const searchResultsGrid = document.getElementById('search-results-grid');
+            const noResultsMessage = document.getElementById('no-results-message');
+
+            // Collect all game cards from the page
+            const allGameCards = [];
+            document.querySelectorAll('.game-card').forEach(card => {
+                const title = card.querySelector('h3')?.textContent.toLowerCase();
+                const category = card.getAttribute('data-category');
+                if (title) {
+                    allGameCards.push({
+                        title: title,
+                        category: category,
+                        element: card.cloneNode(true) // Clone to keep original safe
+                    });
+                }
+            });
+
+            /**
+             * Displays the search results in the grid.
+             * @param {HTMLElement[]} matchedElements - An array of game card elements to display.
+             */
+            const displaySearchResults = (matchedElements) => {
+                // Check if mobile overlay is visible
+                const isMobileSearch = mobileSearchOverlay && !mobileSearchOverlay.classList.contains('hidden');
+
+                if (isMobileSearch) {
+                    // --- Mobile Search Logic ---
+                    mobileSearchResultsGrid.innerHTML = ''; // Clear mobile grid
+                    if (matchedElements.length > 0) {
+                        matchedElements.forEach(element => {
+                            // We need to adjust card size for a 2-col grid
+                            element.classList.remove('sm:w-48');
+                            element.classList.add('w-full');
+                            mobileSearchResultsGrid.appendChild(element);
+                        });
+                        mobileNoResultsMessage.classList.add('hidden');
+                    } else {
+                        mobileNoResultsMessage.classList.remove('hidden');
+                        mobileNoResultsMessage.querySelector('h3').textContent = "No Games Found";
+                        mobileNoResultsMessage.querySelector('p').textContent = "Try a different search term.";
+                    }
+                    // We DON'T hide the main sections, as we are in an overlay
+                } else {
+                    // --- Desktop Search Logic (Original) ---
+                    searchResultsGrid.innerHTML = ''; // Clear desktop grid
+                    if (matchedElements.length > 0) {
+                        matchedElements.forEach(element => {
+                            searchResultsGrid.appendChild(element);
+                        });
+                        noResultsMessage.classList.add('hidden');
+                    } else {
+                        noResultsMessage.classList.remove('hidden');
+                        noResultsMessage.querySelector('h3').textContent = "No Games Found";
+                        noResultsMessage.querySelector('p').textContent = "Try a different search term.";
+                    }
+
+                    gameSectionsContainer.classList.add('hidden');
+                    searchResultsSection.classList.remove('hidden');
+                }
+
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons(); // Redraw icons
+                }
+            };
+
+            /**
+             * Performs a search based on the input value.
+             * @param {string} query - The search query.
+             */
+            const performTitleSearch = (query) => {
+                const normalizedQuery = query.toLowerCase().trim();
+
+                if (!normalizedQuery) {
+                    // If search is empty, show all game sections and hide search results
+
+                    // Reset Desktop UI
+                    gameSectionsContainer.classList.remove('hidden');
+                    searchResultsSection.classList.add('hidden');
+                    searchResultsGrid.innerHTML = '';
+                    noResultsMessage.classList.add('hidden');
+
+                    // Reset Mobile UI
+                    mobileSearchResultsGrid.innerHTML = '';
+                    mobileNoResultsMessage.classList.add('hidden');
+                    return;
+                }
+
+                // Filter games
+                const matchedGames = allGameCards.filter(game =>
+                    game.title.includes(normalizedQuery)
+                );
+
+                const matchedElements = matchedGames.map(game => game.element.cloneNode(true));
+                displaySearchResults(matchedElements);
+            };
+
+            // --- Event Listeners ---
+
+            // Desktop Search (as you type)
+            if (desktopSearchInput) {
+                desktopSearchInput.addEventListener('input', (e) => {
+                    performTitleSearch(e.target.value);
+                    // Sync mobile input if it's open
+                    if (mobileSearchOverlay && !mobileSearchOverlay.classList.contains('hidden')) {
+                        mobileSearchInput.value = e.target.value;
+                    }
+                });
+            }
+
+            // Mobile Search (as you type)
+            if (mobileSearchInput) {
+                mobileSearchInput.addEventListener('input', (e) => {
+                    performTitleSearch(e.target.value);
+                    // Sync desktop input
+                    if (desktopSearchInput) {
+                        desktopSearchInput.value = e.target.value;
+                    }
+                });
+            }
+
+            // Mobile Search Overlay
+            if (mobileSearchBtn) {
+                mobileSearchBtn.addEventListener('click', () => {
+                    if (mobileSearchOverlay) {
+                        mobileSearchOverlay.classList.remove('hidden');
+                    }
+                    if (mobileSearchInput) {
+                        mobileSearchInput.focus();
+                        // Sync values when opening
+                        mobileSearchInput.value = desktopSearchInput ? desktopSearchInput.value : '';
+                    }
+                    if (desktopSearchInput && desktopSearchInput.value) {
+                        performTitleSearch(desktopSearchInput.value);
+                    }
+                });
+            }
+
+            if (mobileSearchClose) {
+                mobileSearchClose.addEventListener('click', () => {
+                    if (mobileSearchOverlay) {
+                        mobileSearchOverlay.classList.add('hidden');
+                    }
+                    // Reset search when closing overlay
+                    if (desktopSearchInput) {
+                        desktopSearchInput.value = '';
+                    }
+                    if (mobileSearchInput) {
+                        mobileSearchInput.value = '';
+                    }
+                    performTitleSearch(''); // This will hide results and show sections
+
+                    // Explicitly clear mobile grid just to be safe
+                    if (mobileSearchResultsGrid) {
+                        mobileSearchResultsGrid.innerHTML = '';
+                    }
+                    if (mobileNoResultsMessage) {
+                        mobileNoResultsMessage.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
+
+</html>
