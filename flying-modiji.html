@@ -2,8 +2,7 @@
 <html lang="en">
 
 <head>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-1QSWB91R8H"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1QSWB91R8H"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -270,7 +269,7 @@
         // Toggle mute
         function toggleMute() {
             isMuted = !isMuted;
-            muteButton.textContent = isMuted ? '這' : '矧';
+            muteButton.textContent = isMuted ? '🔇' : '🔊';
             
             if (isMuted) {
                 bgMusic.pause();
@@ -312,16 +311,20 @@
             width: 50,
             height: 50,
             velocity: 0,
-            gravity: 0.5,
-            jump: -10,
+            // EASIER: Reduced gravity from 0.5 to 0.4 (slower fall)
+            gravity: 0.4,
+            // MODIFIED: Reduced jump strength from -12 to -8 (weaker jump)
+            jump: -8,
             rotation: 0
         };
 
         // Obstacles array
         let obstacles = [];
         const obstacleWidth = 60;
-        const gap = 180;
-        const obstacleSpeed = 3;
+        // EASIER: Increased gap from 180 to 220 (wider path)
+        const gap = 220;
+        // EASIER: Reduced speed from 3 to 2.5 (slower obstacles)
+        const obstacleSpeed = 2.5;
 
         // Cloud array for background
         let clouds = [];
@@ -494,7 +497,8 @@
             drawGround();
 
             // Create new obstacles
-            if (frame % 100 === 0) {
+            // EASIER: Reduced spawn rate from 'frame % 100' to 'frame % 120'
+            if (frame % 120 === 0) {
                 createObstacle();
             }
 
