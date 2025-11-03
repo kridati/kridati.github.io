@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    
+    <!-- Mobile meta tags for full-screen, no scaling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Level Devil</title>
+    <!-- Tone.js library for music generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        /* Basic reset for a full-screen experience */
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevents scrollbars */
+            height: 100%;
+            font-family: 'Arial', sans-serif;
+            background: #333; /* Dark background for a "devilish" feel */
+        }
+
+        /* The game canvas will fill the screen */
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #222;
+        }
+
+        /* Fixed container for all on-screen controls */
+        .controls-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 120px; /* Generous height for touch targets */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            box-sizing: border-box;
+            z-index: 10;
+            /* Allows clicks to pass through the container itself */
+            pointer-events: none; 
+        }
+
+        /* Group for left/right buttons */
+        .move-controls {
+            display: flex;
+            gap: 25px; /* Space between left and right buttons */
+        }
+
+        /* Styling for the individual control buttons */
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%; /* Circular buttons */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 30px;
+            font-weight: bold;
+            /* Prevents text selection on long press */
+            user-select: none;
+            -webkit-user-select: none;
+            /* Makes the buttons clickable */
+            pointer-events: all;
+            transition: all 0.1s ease;
+        }
+
+        /* Visual feedback when a button is pressed */
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
+        }
+
+        /* Container for on-screen text like death count and messages */
+        #ui-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column; /* Stack items vertically */
+            align-items: flex-start; /* Align items to the left */
+            gap: 8px; /* Space between UI elements */
+        }
+        
+        /* Group for Deaths, Prev, Home */
+        .ui-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #deathCounter {
+            color: #FF4136; /* Devilish red */
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .ui-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            text-decoration: none; /* Remove underline from anchor tag */
+        }
+        
+        .ui-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
+        }
+        
+        /* Specific style for the hint button to be on its own line */
+        #hintBtn {
+           font-size: 20px; /* Make emoji bigger */
+           padding: 5px 10px;
+        }
+        
+        /* Specific style for the mute button */
+        #muteBtn {
+           font-size: 20px; /* Make emoji bigger */
+           padding: 5px 10px;
+           /* width: 38.4px; */ /* Removed fixed width */
+           text-align: center; /* Center emoji */
+           box-sizing: border-box; /* Include padding in width */
+        }
+
+
+        #message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            z-index: 20;
+            display: none; /* Hidden by default */
+            max-width: 90%;
+            line-height: 1.2; /* Adjust for vertical centering */
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- The main game area -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI elements: Death counter and controls -->
+    <div id="ui-container">
+        <!-- Top row: Deaths, Prev Level, Home -->
+        <div class="ui-group">
+            <div id="deathCounter">Deaths: 0</div>
+            <div id="prevLevelBtn" class="ui-btn">Prev Level</div>
+            <!-- Anchor tag for the home button -->
+            <a href="../index.html" id="homeBtn" class="ui-btn">Home</a>
+        </div>
+        
+        <!-- Second row: Hint Button -->
+        <div id="hintBtn" class="ui-btn">💡</div>
+        
+        <!-- Third row: Mute Button -->
+        <div id="muteBtn" class="ui-btn">🔇</div>
+    </div>
+
+    <!-- Message box for taunts or level intros -->
+    <div id="message"></div>
+
+    <!-- HTML-based on-screen controls for mobile -->
+    <div class="controls-container">
+        <div class="move-controls">
+            <!-- Left move button -->
+            <div class="control-btn" id="btn-left">◀</div>
+            <!-- Right move button -->
+            <div class="control-btn" id="btn-right">▶</div>
+        </div>
+        <div class="action-controls">
+            <!-- Jump button -->
+            <div class="control-btn" id="btn-jump">▲</div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // --- Global Variables ---
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // DOM Elements
+            const deathCounterEl = document.getElementById('deathCounter');
+            const messageEl = document.getElementById('message');
+            const btnLeft = document.getElementById('btn-left');
+            const btnRight = document.getElementById('btn-right');
+            const btnJump = document.getElementById('btn-jump');
+            const prevLevelBtnEl = document.getElementById('prevLevelBtn'); 
+            const hintBtnEl = document.getElementById('hintBtn'); // Added this
+            const muteBtnEl = document.getElementById('muteBtn'); // Mute button element
+
+            // Game State
+            let player;
+            let currentLevel = 0;
+            let levels = [];
+            const TOTAL_LEVELS = 40; // Total number of levels including generated ones
+            let deathCount = 0;
+            let gameMessage = "";
+            let messageTimer = 0;
+            let isMusicPlaying = false; // Track music state
+            let synth; // Tone.js synth
+            let sequence; // Tone.js sequence
+            let musicStarted = false; // Track if music has ever been started by user interaction
+
+            // Hints for each level
+            const hints = [
+                "This seems easy... for now.", // Level 1
+                "Look before you leap. Or maybe, leap where you can't see.", // Level 2
+                "Trust nothing. Especially not the ground beneath your feet.", // Level 3
+                "Is that really the goal? Or just a trick? Look back!", // Level 4
+                "You won! Tap 'Jump' to play again.", // Hint for Win Screen
+                // Generic hints for generated levels
+                "These levels are... unpredictable. Watch your step.", 
+                "Some platforms might not be what they seem.", 
+                "Patience. Rushing will get you killed.", 
+                "A long jump might be a trap. A short one too.", 
+                "The goal is simple. Getting there isn't.", 
+                "This is getting tricky, isn't it?", 
+            ];
+
+            // Physics
+            const gravity = 0.5;
+            const terminalVelocity = 10;
+            const playerSpeed = 5;
+            const jumpForce = -11;
+
+            // Controls State
+            const controls = {
+                left: false,
+                right: false,
+                jump: false,
+                jumpPressed: false // To prevent holding jump
+            };
+
+            // Camera
+            const camera = {
+                x: 0,
+                y: 0,
+                padding: 0.4 // 40% of screen as buffer
+            };
+
+            // Entity Colors
+            const COLORS = {
+                player: '#39FF14', // Neon green
+                platform: '#888',
+                spike: '#FF4136', // Red
+                goal: '#00BFFF', // Deep sky blue
+                fake: '#888',
+                falling: '#AAA',
+                message: '#FFF'
+            };
+
+            // --- Player Class ---
+            class Player {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.width = 30; // Bounding box for collisions
+                    this.height = 30;
+                    this.vx = 0;
+                    this.vy = 0;
+                    this.isGrounded = false;
+                }
+
+                draw() {
+                    ctx.fillStyle = COLORS.player;
+                    
+                    // Draw a simple stick figure
+                    const headRadius = this.width / 3;
+                    const bodyHeight = this.height / 2;
+                    const legHeight = this.height / 3;
+                    
+                    // Adjust y to draw from the bottom up (feet at this.y + this.height)
+                    const baseY = this.y + this.height;
+
+                    // Legs
+                    ctx.fillRect(this.x + this.width / 2 - 5, baseY - legHeight, 4, legHeight); // Left leg
+                    ctx.fillRect(this.x + this.width / 2 + 1, baseY - legHeight, 4, legHeight); // Right leg
+                    
+                    // Body
+                    ctx.fillRect(this.x + this.width / 2 - 2, baseY - legHeight - bodyHeight, 4, bodyHeight);
+                    
+                    // Head
+                    ctx.beginPath();
+                    ctx.arc(this.x + this.width / 2, baseY - legHeight - bodyHeight - headRadius, headRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Arms (simple line)
+                    ctx.strokeStyle = COLORS.player;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + this.width / 2 - 8, baseY - legHeight - bodyHeight / 2);
+                    ctx.lineTo(this.x + this.width / 2 + 8, baseY - legHeight - bodyHeight / 2);
+                    ctx.stroke();
+                }
+
+
+                update() {
+                    // 1. Handle Input
+                    this.vx = 0;
+                    if (controls.left) {
+                        this.vx = -playerSpeed;
+                    }
+                    if (controls.right) {
+                        this.vx = playerSpeed;
+                    }
+                    if (controls.jump && this.isGrounded && !controls.jumpPressed) {
+                        this.vy = jumpForce;
+                        this.isGrounded = false;
+                        controls.jumpPressed = true; // Mark jump as pressed
+                    }
+                    // Reset jumpPressed when jump button is released
+                    if (!controls.jump) {
+                        controls.jumpPressed = false;
+                    }
+
+                    // 2. Apply Physics
+                    this.vy += gravity;
+                    if (this.vy > terminalVelocity) {
+                        this.vy = terminalVelocity;
+                    }
+
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.isGrounded = false; // Assume not grounded until collision check
+                    
+                    // --- Win Screen Restart Logic ---
+                    // Check if we are on the last level (win screen)
+                    if (currentLevel === TOTAL_LEVELS - 1) {
+                         if (controls.jump && !controls.jumpPressed) {
+                            currentLevel = 0;
+                            deathCount = 0;
+                            deathCounterEl.innerText = 'Deaths: 0';
+                            loadLevel(currentLevel);
+                        }
+                    }
+                }
+            }
+            
+            // --- Procedural Level Generator ---
+            // A simple pseudo-random number generator for deterministic levels
+            let seed = 12345;
+            function random() {
+                seed = (seed * 9301 + 49297) % 233280;
+                return seed / 233280;
+            }
+
+            function generateProceduralLevel(levelNum) {
+                // Set the seed based on level number so it's always the same
+                seed = levelNum * 10;
+                
+                const entities = [];
+                let currentX = 50;
+                let currentY = 400;
+                
+                // Start platform
+                entities.push({ type: 'platform', x: 0, y: 450, width: 100, height: 20 });
+                
+                const numPlatforms = 10 + Math.floor(levelNum / 2); // More platforms as levels increase
+                const maxJumpX = 120; // Max horizontal jump
+                const maxJumpY = 80;  // Max vertical jump
+                const minGap = 30; // Min gap to force a jump
+                
+                for (let i = 0; i < numPlatforms; i++) {
+                    const platformWidth = 80 + random() * 100; // 80 to 180
+                    const gapX = minGap + random() * maxJumpX;
+                    const gapY = (random() * maxJumpY * 2) - maxJumpY; // -maxJumpY to +maxJumpY
+                    
+                    currentX += gapX + platformWidth - 50; // Move x for next platform
+                    currentY += gapY;
+                    
+                    // Clamp Y to keep it somewhat reasonable
+                    if (currentY > 600) currentY = 600;
+                    if (currentY < 100) currentY = 100;
+                    
+                    let platformType = 'platform';
+                    const trapChance = 0.1 + levelNum * 0.01; // Trap chance increases
+                    
+                    if (random() < trapChance) {
+                        platformType = 'falling'; // 10% chance of falling
+                    }
+                    
+                    entities.push({ 
+                        type: platformType, 
+                        x: currentX, 
+                        y: currentY, 
+                        width: platformWidth, 
+                        height: 20 
+                    });
+                    
+                    // Add spikes?
+                    if (random() < trapChance) {
+                        // Spike on platform
+                        entities.push({
+                            type: 'spike',
+                            x: currentX + platformWidth / 4,
+                            y: currentY - 20,
+                            width: platformWidth / 2,
+                            height: 20
+                        });
+                    } else if (random() < trapChance / 2) {
+                        // Spikes *under* platform (gap trap)
+                         entities.push({
+                            type: 'spike',
+                            x: currentX - gapX,
+                            y: currentY + 20,
+                            width: gapX,
+                            height: 20
+                        });
+                    }
+                }
+                
+                // Add the goal
+                entities.push({ 
+                    type: 'goal', 
+                    x: currentX + 50, 
+                    y: currentY - 50, 
+                    width: 30, 
+                    height: 30 
+                });
+                
+                // Add a "floor is lava" spike pit
+                entities.push({ type: 'spike', x: 0, y: 700, width: currentX + 500, height: 50 });
+
+                return {
+                    start: { x: 50, y: 400 },
+                    entities: entities
+                };
+            }
+
+            // --- Level Definitions ---
+            function defineLevels() {
+                levels = [
+                    // --- Level 0: The "Safe" One ---
+                    {
+                        start: { x: 50, y: 400 },
+                        entities: [
+                            // Ground
+                            { type: 'platform', x: 0, y: 500, width: 500, height: 50 },
+                            // Simple jump
+                            { type: 'platform', x: 600, y: 450, width: 200, height: 30 },
+                            // Goal
+                            { type: 'goal', x: 700, y: 400, width: 30, height: 30 },
+                            // Message
+                            { type: 'message', x: 250, y: 480, text: 'This seems easy...' }
+                        ]
+                    },
+                    // --- Level 1: The First Trick ---
+                    {
+                        start: { x: 50, y: 400 },
+                        entities: [
+                            // Ground
+                            { type: 'platform', x: 0, y: 500, width: 300, height: 50 },
+                            // Fake-out gap
+                            { type: 'platform', x: 450, y: 500, width: 100, height: 50 },
+                            { type: 'message', x: 340, y: 480, text: 'Jump?' },
+                            // Hidden spikes in the gap
+                            { type: 'spike', x: 300, y: 500, width: 150, height: 20 },
+                            // Real path: Invisible platform
+                            { type: 'invisible', x: 250, y: 400, width: 100, height: 20 },
+                            // Next platform
+                            { type: 'platform', x: 450, y: 350, width: 100, height: 20 },
+                            // Goal
+                            { type: 'goal', x: 500, y: 300, width: 30, height: 30 }
+                        ]
+                    },
+                    // --- Level 2: Falling Platforms ---
+                    {
+                        start: { x: 50, y: 200 },
+                        entities: [
+                            // Start
+                            { type: 'platform', x: 0, y: 250, width: 100, height: 20 },
+                            // Message
+                            { type: 'message', x: 20, y: 230, text: 'Trust nothing.' },
+                            // Falling platforms
+                            { type: 'falling', x: 200, y: 280, width: 80, height: 20 },
+                            { type: 'falling', x: 350, y: 320, width: 80, height: 20 },
+                            { type: 'falling', x: 500, y: 360, width: 80, height: 20 },
+                            // Spikes below
+                            { type: 'spike', x: 0, y: 600, width: 1000, height: 50 },
+                            // Goal platform
+                            { type: 'platform', x: 650, y: 400, width: 100, height: 20 },
+                            { type: 'goal', x: 700, y: 350, width: 30, height: 30 }
+                        ]
+                    },
+                    // --- Level 3: The Fake Goal (New Trap) ---
+                    {
+                        start: { x: 50, y: 400 },
+                        entities: [
+                            // Ground
+                            { type: 'platform', x: 0, y: 500, width: 300, height: 50 },
+                            // Fake Goal
+                            { type: 'fakegoal', x: 250, y: 450, width: 30, height: 30 },
+                            { type: 'message', x: 220, y: 430, text: 'Already?' },
+                            
+                            // NEW TRAP: Tiny invisible platform appears
+                            { type: 'invisible', id: 'trap_spike', x: 100, y: 350, width: 20, height: 10, hidden: true },
+                            
+                            // Real path appears
+                            { type: 'platform', id: 'real_path', x: -150, y: 400, width: 100, height: 20, hidden: true },
+                            { type: 'platform', id: 'real_path_2', x: -300, y: 350, width: 100, height: 20, hidden: true },
+                            // Real Goal
+                            { type: 'goal', id: 'real_goal', x: -280, y: 300, width: 30, height: 30, hidden: true },
+                        ]
+                    },
+                    // --- Procedurally Generated Levels Start Here ---
+                    // Levels 4 to 38 (Indices 4 to 38)
+                ];
+                
+                // Add generated levels
+                const numHandmadeLevels = levels.length;
+                for (let i = numHandmadeLevels; i < TOTAL_LEVELS - 1; i++) {
+                    levels.push(generateProceduralLevel(i));
+                }
+
+                // --- Final Win Screen (Level 39, i.e., TOTAL_LEVELS - 1) ---
+                levels.push({
+                    start: { x: 300, y: 300 },
+                    entities: [
+                        { type: 'message', x: 200, y: 250, text: 'You... won?' },
+                        { type: 'message', x: 220, y: 300, text: 'You beat all 40 levels!' },
+                        { type: 'message', x: 200, y: 400, text: 'Tap jump to restart' }
+                    ]
+                });
+            }
+
+            // --- Game Functions ---
+
+            // Resize canvas to fill screen
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            // Show a message on screen
+            function showMessage(text, duration = 120) {
+                gameMessage = text;
+                messageEl.innerText = text;
+                messageEl.style.display = 'block';
+                messageTimer = duration;
+            }
+            
+            // Show the hint for the current level
+            function showHint() {
+                let hintIndex = currentLevel;
+                // Special hint for win screen
+                if (currentLevel === TOTAL_LEVELS - 1) {
+                    hintIndex = 4; // Use the "You won" hint
+                }
+                // Use generic hints for generated levels
+                else if (hintIndex >= 5) {
+                    // Cycle through generic hints
+                    hintIndex = 5 + (currentLevel % (hints.length - 5));
+                }
+                
+                showMessage(hints[hintIndex], 180); // Show hint for 3 seconds
+            }
+            
+            // Go to previous level
+            function goToPrevLevel() {
+                if (currentLevel > 0) {
+                    currentLevel--;
+                    loadLevel(currentLevel);
+                    showMessage(`Level ${currentLevel + 1}`);
+                } else {
+                    showMessage("This is the first level!");
+                }
+            }
+
+            // Load a level
+            function loadLevel(levelIndex) {
+                if (levelIndex >= levels.length) {
+                    currentLevel = 0; // Loop back to start
+                }
+                
+                const level = levels[currentLevel];
+                if (!level) {
+                    console.error("Level definition missing for index:", currentLevel);
+                    return;
+                }
+                
+                player = new Player(level.start.x, level.start.y);
+                
+                // Reset dynamic entities
+                if (level.entities) {
+                    level.entities.forEach(e => {
+                        if (e.originalY) e.y = e.originalY; // Reset falling platforms
+                        if (e.type === 'falling') e.triggered = false;
+                        if (e.id === 'trap_spike') e.hidden = true;
+                        if (e.id === 'real_path') e.hidden = true;
+                        if (e.id === 'real_path_2') e.hidden = true;
+                        if (e.id === 'real_goal') e.hidden = true;
+                        // Reset fake goal type on level load
+                        if (e.type === 'usedfakegoal') {
+                            e.type = 'fakegoal';
+                        }
+                    });
+                }
+                
+                // Center camera on start
+                updateCamera(true); 
+                
+                let introMessage = `Level ${currentLevel + 1}`;
+                if (currentLevel === 0) introMessage = "Level Devil";
+                if (currentLevel === TOTAL_LEVELS - 1) introMessage = "You Win!";
+                showMessage(introMessage);
+            }
+
+            // Called when player dies
+            function resetPlayer() {
+                deathCount++;
+                deathCounterEl.innerText = `Deaths: ${deathCount}`;
+                
+                let taunts = ["Oops.", "Try again.", "So close!", "Not even.", "Why?", "Just stop."];
+                showMessage(taunts[deathCount % taunts.length]);
+                
+                // Reload current level
+                loadLevel(currentLevel);
+            }
+
+            // --- Collision Detection & Handling ---
+            function checkCollisions() {
+                const level = levels[currentLevel];
+                if (!level || !level.entities) return;
+
+                // Check for out of bounds (bottom)
+                if (player.y > 2000) {
+                    resetPlayer();
+                    return;
+                }
+                
+                let onGround = false;
+
+                level.entities.forEach(e => {
+                    if (e.hidden) return; // Skip hidden entities
+
+                    // AABB collision check
+                    if (player.x < e.x + e.width &&
+                        player.x + player.width > e.x &&
+                        player.y < e.y + e.height &&
+                        player.y + player.height > e.y) {
+                        
+                        // --- Handle Collision Types ---
+                        switch (e.type) {
+                            case 'platform':
+                            case 'invisible': // Handled just like platforms
+                                resolvePlatformCollision(e);
+                                if (player.vy >= 0) onGround = true; // Only grounded if landing on top
+                                break;
+                            case 'falling':
+                                e.triggered = true; // Trigger the fall
+                                resolvePlatformCollision(e);
+                                if (player.vy >= 0) onGround = true;
+                                break;
+                            case 'spike':
+                                resetPlayer();
+                                break;
+                            case 'goal':
+                                // Check if this is the final level
+                                if (currentLevel === TOTAL_LEVELS - 1) {
+                                    // This is the win screen, do nothing (restart is in player.update)
+                                } else {
+                                    // Go to next level
+                                    currentLevel++;
+                                    loadLevel(currentLevel);
+                                }
+                                break;
+                            case 'fakegoal':
+                                showMessage("Not so fast!", 90);
+                                e.type = 'usedfakegoal'; // Change type to prevent re-trigger
+                                // Reveal the trap and real path
+                                level.entities.forEach(entity => {
+                                    if (entity.id === 'trap_spike' || 
+                                        entity.id === 'real_path' || 
+                                        entity.id === 'real_path_2' || 
+                                        entity.id === 'real_goal') {
+                                        entity.hidden = false;
+                                    }
+                                });
+                                break;
+                        }
+                    }
+                });
+                
+                player.isGrounded = onGround;
+            }
+
+            // AABB collision resolution
+            function resolvePlatformCollision(platform) {
+                // Calculate overlaps
+                const overlapX = (player.x < platform.x) ? 
+                    (player.x + player.width) - platform.x :
+                    (platform.x + platform.width) - player.x;
+                    
+                const overlapY = (player.y < platform.y) ?
+                    (player.y + player.height) - platform.y :
+                    (platform.y + platform.height) - player.y;
+
+                // Determine previous position to find collision side
+                const prevPlayerX = player.x - player.vx;
+                const prevPlayerY = player.y - player.vy;
+
+                // Check for vertical collision (hitting top or bottom)
+                if (overlapY < overlapX) {
+                    // Was player above the platform?
+                    if (prevPlayerY + player.height <= platform.y) {
+                        player.y = platform.y - player.height;
+                        player.vy = 0;
+                        // onGround will be set by checkCollisions
+                    }
+                    // Was player below the platform?
+                    else if (prevPlayerY >= platform.y + platform.height) {
+                        player.y = platform.y + platform.height;
+                        player.vy = 0;
+                    }
+                }
+                // Horizontal collision
+                else {
+                    // Was player to the left?
+                    if (prevPlayerX + player.width <= platform.x) {
+                        player.x = platform.x - player.width;
+                    }
+                    // Was player to the right?
+                    else if (prevPlayerX >= platform.x + platform.width) {
+                        player.x = platform.x + platform.width;
+                    }
+                    player.vx = 0;
+                }
+            }
+
+            // --- Update Game State ---
+            function update() {
+                if (!player) return;
+                
+                // Update player (this now includes the restart logic)
+                player.update();
+                
+                // Check collisions
+                checkCollisions();
+
+                // Update dynamic entities
+                const level = levels[currentLevel];
+                if (level && level.entities) {
+                    level.entities.forEach(e => {
+                        if (e.type === 'falling' && e.triggered) {
+                            if (!e.originalY) e.originalY = e.originalY; // Store original position
+                            e.y += gravity * 2; // Fall faster than player
+                        }
+                    });
+                }
+                
+                // Update camera
+                updateCamera();
+                
+                // Update message timer
+                if (messageTimer > 0) {
+                    messageTimer--;
+                    if (messageTimer === 0) {
+                        gameMessage = "";
+                        messageEl.style.display = 'none';
+                    }
+                }
+            }
+            
+            // --- Update Camera ---
+            function updateCamera(instant = false) {
+                // Target camera position
+                let targetX = -player.x + canvas.width / 2;
+                let targetY = -player.y + canvas.height / 2;
+
+                // Clamp camera to stay within a "padded" view
+                // This logic centers the player but stops the camera
+                // before the player gets too close to the edge.
+                const paddingX = canvas.width * camera.padding;
+                const paddingY = canvas.height * camera.padding;
+                
+                // Left edge
+                if (player.x + camera.x < paddingX) {
+                    targetX = -player.x + paddingX;
+                }
+                // Right edge
+                if (player.x + player.width + camera.x > canvas.width - paddingX) {
+                    targetX = -(player.x + player.width) + (canvas.width - paddingX);
+                }
+                // Top edge
+                if (player.y + camera.y < paddingY) {
+                    targetY = -player.y + paddingY;
+                }
+                // Bottom edge
+                if (player.y + player.height + camera.y > canvas.height - paddingY) {
+                    targetY = -(player.y + player.height) + (canvas.height - paddingY);
+                }
+
+                // Smooth camera movement (lerp)
+                if (instant) {
+                    camera.x = targetX;
+                    camera.y = targetY;
+                } else {
+                    camera.x += (targetX - camera.x) * 0.1;
+                    camera.y += (targetY - camera.y) * 0.1;
+                }
+            }
+
+            // --- Draw Game ---
+            function draw() {
+                // Clear canvas with background color
+                ctx.fillStyle = '#222';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // --- Draw Game World (relative to camera) ---
+                ctx.save();
+                ctx.translate(Math.round(camera.x), Math.round(camera.y));
+
+                const level = levels[currentLevel];
+                if (level && level.entities) {
+                    // Draw entities
+                    level.entities.forEach(e => {
+                        if (e.hidden) return; // Don't draw hidden
+                        
+                        switch (e.type) {
+                            case 'platform':
+                                ctx.fillStyle = COLORS.platform;
+                                ctx.fillRect(e.x, e.y, e.width, e.height);
+                                break;
+                            case 'falling':
+                                ctx.fillStyle = COLORS.falling;
+                                ctx.fillRect(e.x, e.y, e.width, e.height);
+                                break;
+                            case 'invisible':
+                                // Don't draw it! That's the point.
+                                // For debugging:
+                                // ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                                // ctx.strokeRect(e.x, e.y, e.width, e.height);
+                                break;
+                            case 'spike':
+                                ctx.fillStyle = COLORS.spike;
+                                // Simple spike representation
+                                for(let i = 0; i < e.width; i += 20) {
+                                    ctx.beginPath();
+                                    ctx.moveTo(e.x + i, e.y + e.height);
+                                    ctx.lineTo(e.x + i + 10, e.y);
+                                    ctx.lineTo(e.x + i + 20, e.y + e.height);
+                                    ctx.fill();
+                                }
+                                break;
+                            case 'goal':
+                            case 'fakegoal':
+                            case 'usedfakegoal':
+                                ctx.fillStyle = COLORS.goal;
+                                ctx.fillRect(e.x, e.y, e.width, e.height);
+                                // Add shimmer
+                                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                                ctx.fillRect(e.x + 5, e.y + 5, e.width - 10, e.height - 10);
+                                break;
+                            case 'message':
+                                ctx.fillStyle = COLORS.message;
+                                ctx.font = '18px Arial';
+                                ctx.textAlign = 'center';
+                                // Adjust text position for better centering
+                                ctx.fillText(e.text, e.x, e.y);
+                                break;
+                        }
+                    });
+                }
+
+                // Draw player
+                if (player) {
+                    player.draw();
+                }
+                
+                ctx.restore();
+                // --- End Game World ---
+            }
+
+            // --- Main Game Loop ---
+            function gameLoop() {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // --- Auto-start music on first interaction ---
+            async function tryStartMusic() {
+                if (musicStarted) return; // Only run once
+                
+                // Start audio context if not already started (required by browsers)
+                if (Tone.context.state !== 'running') {
+                    await Tone.start();
+                }
+
+                // Start music
+                Tone.Transport.start();
+                sequence.start(0);
+                isMusicPlaying = true;
+                musicStarted = true;
+                // Mute button already shows 🔇 by default
+            }
+
+            // --- Setup Controls ---
+            function setupControls() {
+                // --- Game Controls (Touch) ---
+                btnLeft.addEventListener('touchstart', (e) => { 
+                    e.preventDefault(); 
+                    controls.left = true;
+                    tryStartMusic(); // Try starting music on first touch
+                }, { passive: false });
+                btnLeft.addEventListener('touchend', (e) => { 
+                    e.preventDefault(); 
+                    controls.left = false; 
+                }, { passive: false });
+                
+                btnRight.addEventListener('touchstart', (e) => { 
+                    e.preventDefault(); 
+                    controls.right = true;
+                    tryStartMusic();
+                }, { passive: false });
+                btnRight.addEventListener('touchend', (e) => { 
+                    e.preventDefault(); 
+                    controls.right = false; 
+                }, { passive: false });
+                
+                btnJump.addEventListener('touchstart', (e) => { 
+                    e.preventDefault(); 
+                    controls.jump = true;
+                    tryStartMusic();
+                }, { passive: false });
+                btnJump.addEventListener('touchend', (e) => { 
+                    e.preventDefault(); 
+                    controls.jump = false; 
+                    controls.jumpPressed = false; 
+                }, { passive: false });
+            
+                // --- Game Controls (Mouse for testing) ---
+                btnLeft.addEventListener('mousedown', (e) => { 
+                    controls.left = true; 
+                    tryStartMusic();
+                });
+                btnLeft.addEventListener('mouseup', (e) => { controls.left = false; });
+                btnRight.addEventListener('mousedown', (e) => { 
+                    controls.right = true; 
+                    tryStartMusic();
+                });
+                btnRight.addEventListener('mouseup', (e) => { controls.right = false; });
+                btnJump.addEventListener('mousedown', (e) => { 
+                    controls.jump = true; 
+                    tryStartMusic();
+                });
+                btnJump.addEventListener('mouseup', (e) => { 
+                    controls.jump = false; 
+                    controls.jumpPressed = false; 
+                });
+                
+                // --- UI Button Listeners (using 'click' for desktop/mobile) ---
+                prevLevelBtnEl.addEventListener('click', (e) => {
+                    goToPrevLevel();
+                    tryStartMusic(); // Also counts as interaction
+                });
+                
+                hintBtnEl.addEventListener('click', (e) => {
+                    showHint();
+                    tryStartMusic();
+                });
+
+                // Setup music and mute button listener
+                setupMusic();
+            }
+
+            // Function to initialize music
+            function setupMusic() {
+                // Create a "devilish" sounding synth
+                synth = new Tone.FMSynth({
+                    modulationIndex: 10,
+                    envelope: {
+                        attack: 0.01,
+                        decay: 0.2
+                    },
+                    modulation: {
+                        type: "square"
+                    }
+                }).toDestination();
+
+                // A spooky, repeating C-minor arpeggio with a tritone
+                const melody = ['C3', 'Eb3', 'G3', 'Gb3'];
+
+                sequence = new Tone.Sequence((time, note) => {
+                    synth.triggerAttackRelease(note, '8n', time);
+                }, melody, '4n'); // Play one note every quarter note
+
+                Tone.Transport.bpm.value = 100;
+                sequence.loop = true;
+
+                // Mute Button Listeners (use click for simplicity)
+                muteBtnEl.addEventListener('click', toggleMusic);
+            }
+
+            // Function to toggle music play/pause
+            async function toggleMusic() {
+                // This ensures Tone.js is started even if mute is the *first* button clicked
+                if (!musicStarted) {
+                    await tryStartMusic();
+                    // If music was *just* started, we probably want to mute it immediately
+                    if (isMusicPlaying) {
+                        Tone.Transport.stop();
+                        sequence.stop();
+                        muteBtnEl.innerText = '🎵';
+                        isMusicPlaying = false;
+                    }
+                    return; // Exit function, music state is now handled
+                }
+
+                // If music is already running, just toggle it
+                if (isMusicPlaying) {
+                    Tone.Transport.stop();
+                    sequence.stop();
+                    muteBtnEl.innerText = '🎵';
+                } else {
+                    Tone.Transport.start();
+                    sequence.start(0);
+                    muteBtnEl.innerText = '🔇';
+                }
+                isMusicPlaying = !isMusicPlaying;
+            }
+
+
+            // --- Initialization ---
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            defineLevels(); // Define all 40 levels
+            setupControls(); // This now includes setupMusic()
+            loadLevel(currentLevel);
+            gameLoop();
+        };
+    </script>
+</body>
+</html>
+
+
